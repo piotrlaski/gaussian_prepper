@@ -46,7 +46,7 @@ def read_cif(cif_file):
 
 def create_QMMM_input(qmmm_file, crystal, state = 'S0', base = 'lanl2dz', functional = 'PBE1PBE', nstates = 20, MM_theory = 'UFF', additional = '', genecp = ''):
     # prepare necessary headline strings
-    if state[1] == '0':
+    if state[1] == '0' or state == 'T1' or state == 't1':
         headline_1 = f'#N ONIOM({functional}/{base}:{MM_theory})=EmbedCharge Opt Freq Int=UltraFine SCF=XQC {additional}\n'
     elif state[0] == 't' or state[0] == 'T':
         headline_1 = f'#N ONIOM(TD(triplets,nstates={nstates},Root={state[1]}) {functional}/{base}:{MM_theory})=EmbedCharge Opt Freq Int=UltraFine SCF=XQC {additional}\n'
@@ -59,7 +59,6 @@ def create_QMMM_input(qmmm_file, crystal, state = 'S0', base = 'lanl2dz', functi
     # find the central molecule for QM level
     for molecule in crystal.get_molecules():
         if molecule.sym_id == ['x+0', 'y+0', 'z+0']:
-            print (molecule.sym_id)
             central_molecule = molecule
             break
     with open(qmmm_file, '+w') as f:
@@ -100,7 +99,7 @@ def create_charge_calc_input(charge_calc_file, molecule, state = 'S0', base = 'l
 
 def create_iso_opt_input(isolated_opt_file, molecule, state = 'S0', base = 'lanl2dz', functional = 'PBE1PBE', nstates = 20, additional = '', genecp = ''):
     
-    if state[1] == '0':
+    if state[1] == '0' or state == 'T1' or state == 't1':
         headline_1 = f'#N {functional}/{base} Opt Freq Int=UltraFine SCF=XQC {additional}\n'
     elif state[0] == 't' or state[0] == 'T':
         headline_1 = f'#N {functional}/{base} TD=(triplets, NStates={nstates},Root={state[1]}) Opt Freq Int=UltraFine SCF=XQC {additional}\n'
@@ -232,6 +231,10 @@ class Crystal():
         self.__unique_atom_set.add(atom)
     def get_unique_atom_set(self):
         return self.__unique_atom_set
+    def clear_unique_atom_set(self):
+        self.__unique_atom_set = set()
+
+
 
 class Molecule(Crystal):
     def __init__(self, crystal, sym_id, add_to_crystal = True) -> None:
@@ -273,7 +276,6 @@ class Molecule(Crystal):
                 norm_x_to_h = x_to_h / np.sqrt(np.sum(x_to_h ** 2))
                 x_to_h_extension = norm_x_to_h * new_dist
                 h_ext = np.add(nearest_orts, x_to_h_extension)
-
                 atom.update_ort(h_ext)
 
 class Atom(Molecule):
@@ -310,6 +312,7 @@ sym_ops, cell_params = read_cif(r'C:\Users\piotr\Documents\VS_Code\cluster\Rh(4-
 xyz_chrgd_ort = read_charge_log_file(r'C:\Users\piotr\Documents\VS_Code\cluster\chrg.log')
 molecule_ort = read_xyz_file(r'C:\Users\piotr\Documents\VS_Code\cluster\nonextend.xyz')
 
+
 CIF_PATH = r'C:\Users\piotr\Documents\VS_Code\cluster\Rh(4-Br-SA)(CO)2__Q1_21Dlk1__CCDC.cif'
 XYZ_PATH = r'C:\Users\piotr\Documents\VS_Code\cluster\Rh_4-Br-SA_CO_2.xyz'
 
@@ -319,17 +322,17 @@ CREATE_CHARGE_CALC = True
 CREATE_ISOLATED_OPT = True
 CREATE_TDDFT_CALC = True
 
-CREATE_COUNTERPOISE = False
+CREATE_COUNTERPOISE = True
 COUNTERPOISE_SYMMETRY = (['-x+3', '-y+1', '-z+2'], ['x+0', 'y+0', 'z+0'])
 
-CREATE_ONIOM = True
+CREATE_ONIOM = False
 CHARGE_LOG_PATH = r'C:\Users\piotr\Documents\VS_Code\cluster\chrg.log'
 
 NAME = 'cam_6311_lan'
 
 FUNCTIONAL = 'CAM-B3LYP'
 BASE = 'GenECP'
-STATE = 'S0'
+STATE = 'T1'
 NSTATES = 20
 RADIUS = 15
 ADDITIONAL = 'EmpiricalDispersion=GD3BJ'
@@ -347,7 +350,7 @@ else:
 xtal = Crystal(cell_params, sym_ops)
 main_molecule = Molecule(crystal = xtal,
                         sym_id = ['x+0', 'y+0', 'z+0'],
-                        add_to_crystal = False)
+                        add_to_crystal = True)
 
 
 for atomic_line in loaded_data:
@@ -355,21 +358,22 @@ for atomic_line in loaded_data:
          name = atomic_line[0],
          orts = [float(coord) for coord in atomic_line[1:4]],
          charge = float(atomic_line[4]),
-         add_to_unique_atom_set = False)
+         add_to_unique_atom_set = True)
 
 if EXTEND_HYDROGENS:
     main_molecule.extend_hydrogen_bonds()
 
 if CREATE_COUNTERPOISE:
+    xtal.del_molecule(main_molecule)
+    xtal.clear_unique_atom_set()
     xtal.spawn_sym_mate(main_molecule, COUNTERPOISE_SYMMETRY[0])
     xtal.spawn_sym_mate(main_molecule, COUNTERPOISE_SYMMETRY[1])
-    save_xyz(f'dimer.xyz', xtal)
-    create_counterpoise_input('dimer.inp', xtal, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = GENECP)
+    save_xyz(f'counterpoise_dimer.xyz', xtal)
+    create_counterpoise_input(f'{NAME}_counterpoise.inp', xtal, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = GENECP)
 
 if CREATE_ONIOM:
     xtal.build_infinite_crystal(main_molecule)
     xtal.cut_out_cluster(radius = RADIUS)
-    print (len(xtal.get_molecules()))
     save_xyz(f'{NAME}_{STATE}_cluster.xyz', xtal)
     create_QMMM_input(f'{NAME}_{STATE}_qmmm.inp',xtal, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = GENECP)
 
