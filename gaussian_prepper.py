@@ -59,6 +59,7 @@ def create_QMMM_input(qmmm_file, crystal, state = 'S0', base = 'lanl2dz', functi
     # find the central molecule for QM level
     for molecule in crystal.get_molecules():
         if molecule.sym_id == ['x+0', 'y+0', 'z+0']:
+            print (molecule.sym_id)
             central_molecule = molecule
             break
     with open(qmmm_file, '+w') as f:
@@ -97,7 +98,7 @@ def create_charge_calc_input(charge_calc_file, molecule, state = 'S0', base = 'l
         f.write('\n')
         f.write(genecp)
 
-def create_iso_opt_input(charge_calc_file, molecule, state = 'S0', base = 'lanl2dz', functional = 'PBE1PBE', nstates = 20, additional = '', genecp = ''):
+def create_iso_opt_input(isolated_opt_file, molecule, state = 'S0', base = 'lanl2dz', functional = 'PBE1PBE', nstates = 20, additional = '', genecp = ''):
     
     if state[1] == '0':
         headline_1 = f'#N {functional}/{base} Opt Freq Int=UltraFine SCF=XQC {additional}\n'
@@ -110,7 +111,7 @@ def create_iso_opt_input(charge_calc_file, molecule, state = 'S0', base = 'lanl2
     elif state[0] == 't' or state[0] == 'T':
         headline_2 = '0 3\n'
 
-    with open(charge_calc_file, '+w') as f:
+    with open(isolated_opt_file, '+w') as f:
         f.write(headline_1)
         f.write('\n')
         f.write(f'{state} Isolated Molecule Optimization\n')
@@ -138,6 +139,23 @@ def create_tddft_input(tddft_file, molecule, state = 'S0', base = 'lanl2dz', fun
         f.write(headline_2)
         for atom in molecule.get_atoms():
             f.write('{:<7}{:>12}{:>12}{:>12}\n'.format(atom.name, f'{atom.x_ort:.5f}', f'{atom.y_ort:.5f}', f'{atom.z_ort:.5f}'))   
+        f.write('\n')
+        f.write(genecp)
+
+def create_counterpoise_input(counterpoise_file, crystal, state = 'S0', base = 'lanl2dz', functional = 'PBE1PBE', nstates = 20, additional = '', genecp = ''):
+    
+    headline_1 = f'#N {functional}/{base} Counterpoise=2 {additional}\n'
+    headline_2 = '0 1 0 1 0 1\n'
+
+    with open(counterpoise_file, '+w') as f:
+        f.write(headline_1)
+        f.write('\n')
+        f.write('Counterpoise Calculation\n')
+        f.write('\n')
+        f.write(headline_2)
+        for i, molecule in enumerate(crystal.get_molecules()):
+            for atom in molecule.get_atoms():
+                f.write('{:<18}{:>12}{:>12}{:>12}\n'.format(f'{atom.name}(Fragment={i + 1})', f'{atom.x_ort:.5f}', f'{atom.y_ort:.5f}', f'{atom.z_ort:.5f}'))   
         f.write('\n')
         f.write(genecp)
 
@@ -229,6 +247,34 @@ class Molecule(Crystal):
         return self.__atoms
     def del_atom(self, atom):
         self.__atoms.remove(atom)
+    def find_nearest_non_H_atom(self, h_atom): #returns the h_atom if no atoms in 1.2 range
+        lowest_dist = 1.2
+        nearest_atom = h_atom
+        for atom in self.__atoms:
+            atom_dist = dist([h_atom.x_ort, h_atom.y_ort, h_atom.z_ort], [atom.x_ort, atom.y_ort, atom.z_ort])
+            if atom_dist < lowest_dist and atom.name != 'H':
+                nearest_atom = atom
+                lowest_dist = atom_dist
+        return nearest_atom       
+    def extend_hydrogen_bonds(self, C_H_BOND = 1.089, N_H_BOND = 1.015, O_H_BOND = 0.993):
+        for atom in self.__atoms:
+            if atom.name == 'H':
+                nearest_atom = self.find_nearest_non_H_atom(atom)
+                if nearest_atom.name == 'C':
+                    new_dist = C_H_BOND
+                elif nearest_atom.name == 'N':
+                    new_dist = N_H_BOND
+                elif nearest_atom.name == 'O':
+                    new_dist = O_H_BOND
+                else: continue
+                h_orts = [atom.x_ort, atom.y_ort, atom.z_ort]
+                nearest_orts = [nearest_atom.x_ort, nearest_atom.y_ort, nearest_atom.z_ort]
+                x_to_h = np.subtract(h_orts, nearest_orts)
+                norm_x_to_h = x_to_h / np.sqrt(np.sum(x_to_h ** 2))
+                x_to_h_extension = norm_x_to_h * new_dist
+                h_ext = np.add(nearest_orts, x_to_h_extension)
+
+                atom.update_ort(h_ext)
 
 class Atom(Molecule):
     def __init__(self, molecule, name = None, orts = None, fracs = None, charge = None, add_to_molecule = True, add_to_unique_atom_set = True) -> None:
@@ -251,17 +297,30 @@ class Atom(Molecule):
             molecule.add_atom(self)
         if add_to_unique_atom_set:
             molecule.parent_crystal.add_unique_atom((round(self.x_frac, 2), round(self.y_frac, 2), round(self.z_frac, 2)))
+    def update_ort(self, new_orts):
+        self.x_ort, self.y_ort, self.z_ort = new_orts
+        new_fracs = ort2frac(new_orts, self.ort_matrix)
+        self.x_frac, self.y_frac, self.z_frac = new_fracs
+    def update_frac(self, new_fracs):
+        self.x_frac, self.y_frac, self.z_frac = new_fracs
+        new_orts = frac2ort(new_fracs, self.ort_matrix)
+        self.x_ort, self.y_ort, self.z_ort = new_orts
 
 sym_ops, cell_params = read_cif(r'C:\Users\piotr\Documents\VS_Code\cluster\Rh(4-Br-SA)(CO)2__Q1_21Dlk1__CCDC.cif')
 xyz_chrgd_ort = read_charge_log_file(r'C:\Users\piotr\Documents\VS_Code\cluster\chrg.log')
-molecule_ort = read_xyz_file(r'C:\Users\piotr\Documents\VS_Code\cluster\Rh_4-Br-SA_CO_2.xyz')
+molecule_ort = read_xyz_file(r'C:\Users\piotr\Documents\VS_Code\cluster\nonextend.xyz')
 
 CIF_PATH = r'C:\Users\piotr\Documents\VS_Code\cluster\Rh(4-Br-SA)(CO)2__Q1_21Dlk1__CCDC.cif'
 XYZ_PATH = r'C:\Users\piotr\Documents\VS_Code\cluster\Rh_4-Br-SA_CO_2.xyz'
 
-CREATE_CHARGE_CALC = False
+EXTEND_HYDROGENS = True
+
+CREATE_CHARGE_CALC = True
 CREATE_ISOLATED_OPT = True
 CREATE_TDDFT_CALC = True
+
+CREATE_COUNTERPOISE = False
+COUNTERPOISE_SYMMETRY = (['-x+3', '-y+1', '-z+2'], ['x+0', 'y+0', 'z+0'])
 
 CREATE_ONIOM = True
 CHARGE_LOG_PATH = r'C:\Users\piotr\Documents\VS_Code\cluster\chrg.log'
@@ -288,7 +347,7 @@ else:
 xtal = Crystal(cell_params, sym_ops)
 main_molecule = Molecule(crystal = xtal,
                         sym_id = ['x+0', 'y+0', 'z+0'],
-                        add_to_crystal=False)
+                        add_to_crystal = False)
 
 
 for atomic_line in loaded_data:
@@ -297,6 +356,15 @@ for atomic_line in loaded_data:
          orts = [float(coord) for coord in atomic_line[1:4]],
          charge = float(atomic_line[4]),
          add_to_unique_atom_set = False)
+
+if EXTEND_HYDROGENS:
+    main_molecule.extend_hydrogen_bonds()
+
+if CREATE_COUNTERPOISE:
+    xtal.spawn_sym_mate(main_molecule, COUNTERPOISE_SYMMETRY[0])
+    xtal.spawn_sym_mate(main_molecule, COUNTERPOISE_SYMMETRY[1])
+    save_xyz(f'dimer.xyz', xtal)
+    create_counterpoise_input('dimer.inp', xtal, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = GENECP)
 
 if CREATE_ONIOM:
     xtal.build_infinite_crystal(main_molecule)
