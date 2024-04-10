@@ -181,6 +181,7 @@ class Crystal():
         self.cell_vec_a, self.cell_vec_b, self.cell_vec_c = unit_cell_vectors(cell_params)
         self.ort_matrix = np.array([self.cell_vec_a, self.cell_vec_b, self.cell_vec_c])
         self.__molecules = []
+        self.__unique_atom_set = set()
     def add_molecule(self, molecule):
         self.__molecules.append(molecule)
     def get_molecules(self):
@@ -192,7 +193,9 @@ class Crystal():
         for main_atom in main_molecule.get_atoms():
             main_atom_fracs = [main_atom.x_frac, main_atom.y_frac, main_atom.z_frac]
             new_fracs = apply_symmetry(main_atom_fracs, sym_op)
-            Atom(molecule = new_molecule, name = main_atom.name, fracs = new_fracs, charge = main_atom.charge)
+            new_atom_unique_fracs = tuple(round(i, 2) for i in new_fracs)
+            if new_atom_unique_fracs not in self.__unique_atom_set:
+                Atom(molecule = new_molecule, name = main_atom.name, fracs = new_fracs, charge = main_atom.charge)
     def build_infinite_crystal(self, main_molecule, p = 3):
         for sym_op in self.sym_ops:
             for mod_x, mod_y, mod_z in itertools.product(range(-p, p+1), repeat=3):
@@ -207,12 +210,17 @@ class Crystal():
             else:
                 deletion_list.append(molecule)
         self.__molecules = list(set(self.get_molecules()).difference(deletion_list))
+    def add_unique_atom(self, atom):
+        self.__unique_atom_set.add(atom)
+    def get_unique_atom_set(self):
+        return self.__unique_atom_set
 
 class Molecule(Crystal):
     def __init__(self, crystal, sym_id, add_to_crystal = True) -> None:
         super().__init__(cell_params = crystal.cell_params, sym_ops = crystal.sym_ops)
         self.sym_id = sym_id
         self.__atoms = []
+        self.parent_crystal = crystal
         if add_to_crystal:
             crystal.add_molecule(self)
     def add_atom(self, atom):
@@ -223,9 +231,10 @@ class Molecule(Crystal):
         self.__atoms.remove(atom)
 
 class Atom(Molecule):
-    def __init__(self, molecule, name = None, orts = None, fracs = None, charge = None, add_to_molecule = True) -> None:
-        super().__init__(crystal = molecule, sym_id = molecule.sym_id)
+    def __init__(self, molecule, name = None, orts = None, fracs = None, charge = None, add_to_molecule = True, add_to_unique_atom_set = True) -> None:
+        super().__init__(molecule.parent_crystal, sym_id = molecule.sym_id, add_to_crystal = False)
         self.name = name
+        self.parent_molecule = molecule
         if orts is not None and fracs is None:
             self.x_ort, self.y_ort, self.z_ort = orts
             fracs = ort2frac(orts, self.ort_matrix)
@@ -240,6 +249,8 @@ class Atom(Molecule):
         self.charge = charge
         if add_to_molecule:
             molecule.add_atom(self)
+        if add_to_unique_atom_set:
+            molecule.parent_crystal.add_unique_atom((round(self.x_frac, 2), round(self.y_frac, 2), round(self.z_frac, 2)))
 
 sym_ops, cell_params = read_cif(r'C:\Users\piotr\Documents\VS_Code\cluster\Rh(4-Br-SA)(CO)2__Q1_21Dlk1__CCDC.cif')
 xyz_chrgd_ort = read_charge_log_file(r'C:\Users\piotr\Documents\VS_Code\cluster\chrg.log')
@@ -276,13 +287,16 @@ else:
 
 xtal = Crystal(cell_params, sym_ops)
 main_molecule = Molecule(crystal = xtal,
-                        sym_id = 0,
+                        sym_id = ['x+0', 'y+0', 'z+0'],
                         add_to_crystal=False)
+
+
 for atomic_line in loaded_data:
     Atom(molecule = main_molecule,
          name = atomic_line[0],
          orts = [float(coord) for coord in atomic_line[1:4]],
-         charge = float(atomic_line[4]))
+         charge = float(atomic_line[4]),
+         add_to_unique_atom_set = False)
 
 if CREATE_ONIOM:
     xtal.build_infinite_crystal(main_molecule)
@@ -299,3 +313,4 @@ if CREATE_ISOLATED_OPT:
 
 if CREATE_TDDFT_CALC:
     create_tddft_input(f'{NAME}_{STATE}_tddft.inp', main_molecule, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = GENECP)
+
