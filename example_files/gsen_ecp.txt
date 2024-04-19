@@ -1,0 +1,10 @@
+Rh 0
+LANL2DZ
+****
+C N O H Br 0
+6-31G**
+****
+
+Rh 0
+LANL2DZ
+
