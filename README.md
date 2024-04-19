@@ -11,5 +11,7 @@ Currently you can create inputs for:
 4. QM/MM jobs
 5. Interaction energy jobs (counterpoise)
 
+You also have an option to standarize H-X bonds (C-H, O-H, N-H) for your uploaded geometry, as well an option to specify your own basis set and/or ECP pseudopotential.
+
 For any additional help or bug reports, please contact:
 pa.laski@uw.edu.pl
