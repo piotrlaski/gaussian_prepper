@@ -1,6 +1,6 @@
 from config import *
-from utils import *
-from file_operations import *
+from lib.utils import *
+from lib.file_operations import *
 
 if __name__ == '__main__':
 

@@ -1,4 +1,4 @@
-from utils import *
+from lib.utils import *
 
 def read_xyz_file(xyz_file):
     molecule_ort = []
