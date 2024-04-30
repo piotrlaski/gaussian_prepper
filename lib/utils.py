@@ -6,12 +6,12 @@ import time
 import functools
 
 def timing_decorator(func):
-    @functools.wraps(func)  # Preserves original function's metadata
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        start_time = time.time()  # Start timing
-        result = func(*args, **kwargs)  # Execute the function
-        end_time = time.time()  # End timing
-        elapsed_time = end_time - start_time  # Calculate elapsed time
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        elapsed_time = end_time - start_time
         print(f"Function '{func.__name__}' took {elapsed_time:.4f} seconds to complete.")
         return result
     return wrapper
@@ -78,7 +78,7 @@ class Crystal():
         deletion_list = []
         for molecule in self.get_molecules():
             for atom in molecule.get_atoms():
-                if dist([0, 0, 0], [atom.x_ort, atom.y_ort, atom.z_ort]) < radius:
+                if any([dist([main_atom.x_ort, main_atom.y_ort, main_atom.z_ort], [atom.x_ort, atom.y_ort, atom.z_ort]) < radius for main_atom in main_molecule.get_atoms()]):
                     break
             else:
                 deletion_list.append(molecule)
