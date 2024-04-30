@@ -2,6 +2,20 @@ import numpy as np
 import itertools
 import os
 import re
+import time
+import functools
+
+def timing_decorator(func):
+    @functools.wraps(func)  # Preserves original function's metadata
+    def wrapper(*args, **kwargs):
+        start_time = time.time()  # Start timing
+        result = func(*args, **kwargs)  # Execute the function
+        end_time = time.time()  # End timing
+        elapsed_time = end_time - start_time  # Calculate elapsed time
+        print(f"Function '{func.__name__}' took {elapsed_time:.4f} seconds to complete.")
+        return result
+    return wrapper
+
 
 def apply_symmetry(old_fracs, sym_op):
     x, y, z = old_fracs
@@ -53,12 +67,14 @@ class Crystal():
             new_atom_unique_fracs = tuple(round(i, 2) for i in new_fracs)
             if new_atom_unique_fracs not in self.__unique_atom_set:
                 Atom(molecule = new_molecule, name = main_atom.name, fracs = new_fracs, charge = main_atom.charge)
+    @timing_decorator
     def build_infinite_crystal(self, main_molecule, p = 3):
         for sym_op in self.sym_ops:
             for mod_x, mod_y, mod_z in itertools.product(range(-p, p+1), repeat=3):
                 new_sym_id = [f'{sym_op[0]}+{str(mod_x)}', f'{sym_op[1]}+{str(mod_y)}', f'{sym_op[2]}+{str(mod_z)}']
                 self.spawn_sym_mate(main_molecule, sym_op = new_sym_id)
-    def cut_out_cluster(self, radius):
+    @timing_decorator
+    def cut_out_cluster(self, main_molecule, radius):
         deletion_list = []
         for molecule in self.get_molecules():
             for atom in molecule.get_atoms():

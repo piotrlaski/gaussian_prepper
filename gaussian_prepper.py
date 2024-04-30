@@ -2,6 +2,7 @@ from config import *
 from lib.utils import *
 from lib.file_operations import *
 
+
 if __name__ == '__main__':
 
     if os.path.isfile(CIF_PATH) and os.path.isfile(CHARGE_LOG_PATH):
@@ -44,7 +45,7 @@ if __name__ == '__main__':
 
     if CREATE_ONIOM:
         xtal.build_infinite_crystal(main_molecule)
-        xtal.cut_out_cluster(radius = RADIUS)
+        xtal.cut_out_cluster(main_molecule=main_molecule, radius = RADIUS)
         save_xyz(f'{NAME}_{STATE}_cluster.xyz', xtal)
         create_QMMM_input(f'{NAME}_{STATE}_qmmm.inp',xtal, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
 

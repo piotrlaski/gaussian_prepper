@@ -1,7 +1,7 @@
 
 # full paths .cif containing symmetry data and .xyz containing inquired molecular geometry
-CIF_PATH = r'C:\Users\piotr\Documents\VS_Code\cluster\example_files\Rh(4-Br-SA)(CO)2__Q1_21Dlk1__CCDC.cif'
-XYZ_PATH = r'C:\Users\piotr\Documents\VS_Code\cluster\example_files\Rh_4-Br-SA_CO_2.xyz'
+CIF_PATH = r'C:\Users\piotr\Documents\working_dirs_lapek\gaussian_prepper\example_files\Rh(4-Br-SA)(CO)2__Q1_21Dlk1__CCDC.cif'
+XYZ_PATH = r'C:\Users\piotr\Documents\working_dirs_lapek\gaussian_prepper\example_files\Rh_4-Br-SA_CO_2.xyz'
 
 # hydrogen extension for CH, OH, NH bonds (True/False)
 EXTEND_HYDROGENS = True
@@ -19,7 +19,7 @@ COUNTERPOISE_SYMMETRY = (['-x+3', '-y+1', '-z+2'], ['x+0', 'y+0', 'z+0'])
 # QMMM calculation input creation (True/False)
 CREATE_ONIOM = True
 # post-Gaussian charge calculation *.log file full path
-CHARGE_LOG_PATH = r'C:\Users\piotr\Documents\VS_Code\cluster\example_files\chrg.log'
+CHARGE_LOG_PATH = r'C:\Users\piotr\Documents\working_dirs_lapek\gaussian_prepper\example_files\chrg.log'
 # molecular cluster radius in Angstroms (integer)
 RADIUS = 15
 
