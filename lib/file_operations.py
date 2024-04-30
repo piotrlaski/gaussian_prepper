@@ -40,11 +40,11 @@ def read_cif(cif_file):
 def create_QMMM_input(qmmm_file, crystal, state = 'S0', base = 'lanl2dz', functional = 'PBE1PBE', nstates = 20, MM_theory = 'UFF', additional = '', genecp = ''):
     # prepare necessary headline strings
     if state[1] == '0' or state == 'T1' or state == 't1':
-        headline_1 = f'#N ONIOM({functional}/{base}:{MM_theory})=EmbedCharge Opt Freq Int=UltraFine SCF=XQC {additional}\n'
+        headline_1 = f'#N ONIOM({functional}/{base}:{MM_theory})=EmbedCharge Opt Int=UltraFine SCF=XQC {additional}\n'
     elif state[0] == 't' or state[0] == 'T':
-        headline_1 = f'#N ONIOM(TD(triplets,nstates={nstates},Root={state[1]}) {functional}/{base}:{MM_theory})=EmbedCharge Opt Freq Int=UltraFine SCF=XQC {additional}\n'
+        headline_1 = f'#N ONIOM(TD(triplets,nstates={nstates},Root={state[1]}) {functional}/{base}:{MM_theory})=EmbedCharge Opt Int=UltraFine SCF=XQC {additional}\n'
     else:
-        headline_1 = f'#N ONIOM(TD(nstates={nstates},Root={state[1]}) {functional}/{base}:{MM_theory})=EmbedCharge Opt Freq Int=UltraFine SCF=XQC {additional}\n'
+        headline_1 = f'#N ONIOM(TD(nstates={nstates},Root={state[1]}) {functional}/{base}:{MM_theory})=EmbedCharge Opt Int=UltraFine SCF=XQC {additional}\n'
     if state[0] == 's' or state[0] == 'S':
         headline_2 = '0 1 0 1 0 1\n'
     elif state[0] == 't' or state[0] == 'T':
@@ -93,11 +93,11 @@ def create_charge_calc_input(charge_calc_file, molecule, state = 'S0', base = 'l
 def create_iso_opt_input(isolated_opt_file, molecule, state = 'S0', base = 'lanl2dz', functional = 'PBE1PBE', nstates = 20, additional = '', genecp = ''):
     
     if state[1] == '0' or state == 'T1' or state == 't1':
-        headline_1 = f'#N {functional}/{base} Opt Freq Int=UltraFine SCF=XQC {additional}\n'
+        headline_1 = f'#N {functional}/{base} Opt Int=UltraFine SCF=XQC {additional}\n'
     elif state[0] == 't' or state[0] == 'T':
-        headline_1 = f'#N {functional}/{base} TD=(triplets, NStates={nstates},Root={state[1]}) Opt Freq Int=UltraFine SCF=XQC {additional}\n'
+        headline_1 = f'#N {functional}/{base} TD=(triplets, NStates={nstates},Root={state[1]}) Opt Int=UltraFine SCF=XQC {additional}\n'
     else:
-        headline_1 = f'#N {functional}/{base} TD=(NStates={nstates},Root={state[1]}) Opt Freq Int=UltraFine SCF=XQC {additional}\n'
+        headline_1 = f'#N {functional}/{base} TD=(NStates={nstates},Root={state[1]}) Opt Int=UltraFine SCF=XQC {additional}\n'
     if state[0] == 's' or state[0] == 'S':
         headline_2 = '0 1\n'
     elif state[0] == 't' or state[0] == 'T':
