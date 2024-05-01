@@ -37,7 +37,8 @@ def read_cif(cif_file):
         cell_params = [float(i) for i in cell_params]
     return (sym_ops, cell_params)
 
-def create_QMMM_input(qmmm_file, crystal, state = 'S0', base = 'lanl2dz', functional = 'PBE1PBE', nstates = 20, MM_theory = 'UFF', additional = '', genecp = ''):
+def create_QMMM_input(outputdir, name, crystal, state, base, functional, molecule = None, nstates = 20, MM_theory = 'UFF', additional = '', genecp = ''):
+    qmmm_file = os.path.join(outputdir, f'{name}_{state}_qmmm.inp')
     # prepare necessary headline strings
     if state[1] == '0' or state == 'T1' or state == 't1':
         headline_1 = f'#N ONIOM({functional}/{base}:{MM_theory})=EmbedCharge Opt Int=UltraFine SCF=XQC {additional}\n'
@@ -70,8 +71,8 @@ def create_QMMM_input(qmmm_file, crystal, state = 'S0', base = 'lanl2dz', functi
         f.write('\n')
         f.write(genecp)
 
-def create_charge_calc_input(charge_calc_file, molecule, state = 'S0', base = 'lanl2dz', functional = 'PBE1PBE', additional = '', genecp = ''):
-
+def create_charge_calc_input(outputdir, name, molecule, state, base, functional, nstates = None, crystal = None, MM_theory = None, additional = '', genecp = ''):
+    charge_calc_file = os.path.join(outputdir, f'{name}_{state}_charge.inp')
     headline_1 = f'#N {functional}/{base} pop=(full,Hirshfeld) Int=UltraFine {additional}\n'
 
     if state[0] == 's' or state[0] == 'S':
@@ -90,8 +91,8 @@ def create_charge_calc_input(charge_calc_file, molecule, state = 'S0', base = 'l
         f.write('\n')
         f.write(genecp)
 
-def create_iso_opt_input(isolated_opt_file, molecule, state = 'S0', base = 'lanl2dz', functional = 'PBE1PBE', nstates = 20, additional = '', genecp = ''):
-    
+def create_iso_opt_input(outputdir, name, molecule, state, base, functional, nstates = None, crystal = None, MM_theory = None, additional = '', genecp = ''):
+    isolated_opt_file = os.path.join(outputdir, f'{name}_{state}_opt.inp')
     if state[1] == '0' or state == 'T1' or state == 't1':
         headline_1 = f'#N {functional}/{base} Opt Int=UltraFine SCF=XQC {additional}\n'
     elif state[0] == 't' or state[0] == 'T':
@@ -114,10 +115,9 @@ def create_iso_opt_input(isolated_opt_file, molecule, state = 'S0', base = 'lanl
         f.write('\n')
         f.write(genecp)
 
-def create_tddft_input(tddft_file, molecule, state = 'S0', base = 'lanl2dz', functional = 'PBE1PBE', nstates = 20, additional = '', genecp = ''):
-
+def create_tddft_input(outputdir, name, molecule, state, base, functional, nstates = None, crystal = None, MM_theory = None, additional = '', genecp = ''):
+    tddft_file = os.path.join(outputdir, f'{name}_{state}_tddft.inp')
     headline_1 = f'#N {functional}/{base} TD=(nstates={nstates}, 50-50) pop=(full,Hirshfeld) Int=UltraFine {additional}\n'
-
     if state[0] == 's' or state[0] == 'S':
         headline_2 = '0 1\n'
     elif state[0] == 't' or state[0] == 'T':
@@ -134,8 +134,8 @@ def create_tddft_input(tddft_file, molecule, state = 'S0', base = 'lanl2dz', fun
         f.write('\n')
         f.write(genecp)
 
-def create_counterpoise_input(counterpoise_file, crystal, state = 'S0', base = 'lanl2dz', functional = 'PBE1PBE', nstates = 20, additional = '', genecp = ''):
-    
+def create_counterpoise_input(outputdir, name, crystal, state, base, functional, nstates = None, molecule = None, MM_theory = None, additional = '', genecp = ''):
+    counterpoise_file = os.path.join(outputdir, f'{name}_{state}_counterpoise.inp')
     headline_1 = f'#N {functional}/{base} Counterpoise=2 {additional}\n'
     headline_2 = '0 1 0 1 0 1\n'
 
@@ -145,11 +145,22 @@ def create_counterpoise_input(counterpoise_file, crystal, state = 'S0', base = '
         f.write('Counterpoise Calculation\n')
         f.write('\n')
         f.write(headline_2)
-        for i, molecule in enumerate(crystal.get_molecules()):
-            for atom in molecule.get_atoms():
+        for i, mate_molecule in enumerate(crystal.get_molecules()):
+            for atom in mate_molecule.get_atoms():
                 f.write('{:<18}{:>12}{:>12}{:>12}\n'.format(f'{atom.name}(Fragment={i + 1})', f'{atom.x_ort:.5f}', f'{atom.y_ort:.5f}', f'{atom.z_ort:.5f}'))   
         f.write('\n')
         f.write(genecp)
+
+def multiple_inputs(input_creation_function, outputdir, name, state, base, functional, crystal = None, molecule = None, nstates = 20, MM_theory = 'UFF', additional = '', genecp = []):
+    if genecp:
+        it_genecp = iter(genecp)
+    for cur_base, cur_functional, cur_name in zip(base, functional, name):
+        if cur_base.lower() == 'genecp':
+            cur_genecp = next(it_genecp)
+        else:
+            cur_genecp = ''
+        for cur_state in state:
+            input_creation_function(outputdir = outputdir, name = cur_name, crystal = crystal, molecule = molecule, state = cur_state, base = cur_base, functional = cur_functional, nstates = nstates, MM_theory = MM_theory, additional = additional, genecp = cur_genecp)
 
 def save_xyz(new_xyz_file, data_object):
     with open (new_xyz_file, '+w') as f:

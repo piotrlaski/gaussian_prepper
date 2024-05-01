@@ -6,7 +6,7 @@ XYZ_PATH = r'C:\Users\piotr\Documents\working_dirs_lapek\gaussian_prepper\exampl
 OUTPUT_DIRECTORY = r'C:\Users\piotr\Desktop\last_att_Rh\pure_try'
 
 # hydrogen extension for CH, OH, NH bonds (True/False)
-EXTEND_HYDROGENS = False
+EXTEND_HYDROGENS = True
 
 # which Gaussian outputs to create (True/False)
 CREATE_CHARGE_CALC = False
@@ -14,12 +14,12 @@ CREATE_ISOLATED_OPT = False
 CREATE_TDDFT_CALC = False
 
 # interaction energy calculation input creation (True/False)
-CREATE_COUNTERPOISE = False
+CREATE_COUNTERPOISE = True
 # provide symmetry identifiers eg. (['-x+3', '-y+1', '-z+2'], ['x+0', 'y+0', 'z+0']) of the 2 molecules (tuple(list[str,str,str], list [str,str,str]))
 COUNTERPOISE_SYMMETRY = (['-x+3', '-y+1', '-z+2'], ['x+0', 'y+0', 'z+0'])
 
 # QMMM calculation input creation (True/False)
-CREATE_ONIOM = True
+CREATE_ONIOM = False
 # post-Gaussian charge calculation *.log file full path
 CHARGE_LOG_PATH = r'C:\Users\piotr\Desktop\last_att_Rh\pure_try\cam_6311_lan_S0_chrg.log'
 # molecular cluster radius in Angstroms (integer)
@@ -30,11 +30,11 @@ NSTATES = 20
 # Additional keywords to be put at the end of header in inputs
 ADDITIONAL = 'IOp(3/174=1000000) IOp(3/175=2067400) IOp(3/177=0370800) IOp(3/178=5474300)'
 
-STATE = 'T1'
+STATE = ['T1','S0', 'S1']
 
 # Name of the Gaussian job (it should ifentify the functional/base, different states will be named automatically)
-NAME = 'cam_6311_lan'
-FUNCTIONAL = 'CAM-B3LYP'
-BASE = 'GenECP'
+NAME = ['b3lyp_6311g' ,'cam_genecp']
+FUNCTIONAL = ['B3LYP','CAM-B3LYP']
+BASE = ['6-31G**' ,'GenECP']
 # only for GenECP custom base/pseudopotential - the appendix you would normally put after molecule geometry in a Gaussian input (text file full path)
-GENECP_FILE = r'C:\Users\piotr\Documents\working_dirs_lapek\gaussian_prepper\example_files\gsen_ecp.txt'
+GENECP_FILE = [r'C:\Users\piotr\Documents\working_dirs_lapek\gaussian_prepper\example_files\gsen_ecp.txt']

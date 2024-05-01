@@ -14,11 +14,11 @@ if __name__ == '__main__':
 
     sym_ops, cell_params = read_cif(CIF_PATH)
 
-    if os.path.isfile(GENECP_FILE):
-        with open(GENECP_FILE, '+r') as f:
-            genecp = f.read()
-    else:
-        genecp = ''
+    genecp = []
+    for genecp_file in GENECP_FILE:
+        with open(genecp_file, '+r') as f:
+            genecp.append(f.read())
+
 
     xtal = Crystal(cell_params, sym_ops)
     main_molecule = Molecule(crystal = xtal,
@@ -39,20 +39,19 @@ if __name__ == '__main__':
         xtal.clear_unique_atom_set()
         xtal.spawn_sym_mate(main_molecule, COUNTERPOISE_SYMMETRY[0])
         xtal.spawn_sym_mate(main_molecule, COUNTERPOISE_SYMMETRY[1])
-        save_xyz(f'counterpoise_dimer.xyz', xtal)
-        create_counterpoise_input(os.path.join(OUTPUT_DIRECTORY, f'{NAME}_counterpoise.inp'), xtal, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
+        save_xyz(os.path.join(OUTPUT_DIRECTORY, f'counterpoise_dimer.xyz'), xtal)
+        multiple_inputs(input_creation_function=create_counterpoise_input, outputdir=OUTPUT_DIRECTORY, name=NAME, crystal = xtal, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
 
     if CREATE_ONIOM:
         xtal.build_infinite_crystal(main_molecule)
         xtal.cut_out_cluster(main_molecule=main_molecule, radius = RADIUS)
-        save_xyz(os.path.join(OUTPUT_DIRECTORY, f'{NAME}_{STATE}_cluster.xyz'), xtal)
-        create_QMMM_input(os.path.join(OUTPUT_DIRECTORY, f'{NAME}_{STATE}_qmmm.inp'),xtal, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
-
+        save_xyz(os.path.join(OUTPUT_DIRECTORY, f'cluster.xyz'), xtal)
+        multiple_inputs(input_creation_function = create_QMMM_input, outputdir=OUTPUT_DIRECTORY, name=NAME, crystal=xtal, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
     if CREATE_CHARGE_CALC:
-        create_charge_calc_input(os.path.join(OUTPUT_DIRECTORY, f'{NAME}_{STATE}_chrg.inp'), main_molecule, functional = FUNCTIONAL, base = BASE, state = STATE, additional = ADDITIONAL, genecp = genecp)
+        multiple_inputs(input_creation_function=create_charge_calc_input, outputdir=OUTPUT_DIRECTORY, name=NAME, molecule = main_molecule, functional = FUNCTIONAL, base = BASE, state = STATE, additional = ADDITIONAL, genecp = genecp)
 
     if CREATE_ISOLATED_OPT:
-        create_iso_opt_input(os.path.join(OUTPUT_DIRECTORY, f'{NAME}_{STATE}_isolated.inp'), main_molecule, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
+        multiple_inputs(input_creation_function=create_iso_opt_input, outputdir=OUTPUT_DIRECTORY, name=NAME, molecule=main_molecule, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
 
     if CREATE_TDDFT_CALC:
-        create_tddft_input(os.path.join(OUTPUT_DIRECTORY, f'{NAME}_{STATE}_tddft.inp'), main_molecule, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
+        multiple_inputs(input_creation_function=create_tddft_input, outputdir=OUTPUT_DIRECTORY, name=NAME, molecule=main_molecule, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
