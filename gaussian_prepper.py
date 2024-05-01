@@ -4,6 +4,7 @@ from lib.file_operations import *
 
 if __name__ == '__main__':
 
+    preexisting_files = set(os.listdir(OUTPUT_DIRECTORY))
     if os.path.isfile(CIF_PATH) and os.path.isfile(XYZ_PATH):
         loaded_data = read_xyz_file(XYZ_PATH)
     else:
@@ -48,3 +49,21 @@ if __name__ == '__main__':
                 xtal.cut_out_cluster(main_molecule=main_molecule, radius = RADIUS)
                 if i == 1: save_xyz(os.path.join(OUTPUT_DIRECTORY, f'cluster.xyz'), xtal)
                 multiple_inputs(input_creation_function = create_QMMM_input, outputdir=OUTPUT_DIRECTORY, name=name, crystal=xtal, functional = functional, base = base, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
+
+    if CREATE_SHELL_SCRIPT:
+        new_files = set(os.listdir(OUTPUT_DIRECTORY)) - preexisting_files
+        shell_script_file = os.path.join(OUTPUT_DIRECTORY, 'autogaussian.sh')
+        with open(shell_script_file, '+w') as f:
+            for file in new_files:
+                if file[-8:-4] == 'qmmm':
+                    params = ONIOM_PARAMS
+                elif file[-9:-4] == 'tddft':
+                    params = TDDFT_PARAMS
+                elif file[-7:-4] == 'opt':
+                    params = ISOLATED_OPT_PARAMS
+                elif file[-10:-4] == 'charge':
+                    params = CHARGE_PARAMS
+                elif file[-16:-4] == 'counterpoise':
+                    params = COUNTERPOISE_PARAMS
+                
+                f.write(f'{GAUSSIAN_VERSION} {file} -c {params[0]} -m {params[1]} -t {params[2]}\n')
