@@ -90,6 +90,19 @@ class Crystal():
     def clear_unique_atom_set(self):
         self.__unique_atom_set = set()
 
+def spawn_crystal(cell_params, sym_ops, loaded_data):
+    xtal = Crystal(cell_params, sym_ops)
+    main_molecule = Molecule(crystal = xtal,
+                            sym_id = ['x+0', 'y+0', 'z+0'],
+                            add_to_crystal = True)
+    for atomic_line in loaded_data:
+        Atom(molecule = main_molecule,
+            name = atomic_line[0],
+            orts = [float(coord) for coord in atomic_line[1:4]],
+            charge = float(atomic_line[4]),
+            add_to_unique_atom_set = True)
+    return (xtal, main_molecule)
+
 class Molecule(Crystal):
     def __init__(self, crystal, sym_id, add_to_crystal = True) -> None:
         super().__init__(cell_params = crystal.cell_params, sym_ops = crystal.sym_ops)

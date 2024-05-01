@@ -4,9 +4,7 @@ from lib.file_operations import *
 
 if __name__ == '__main__':
 
-    if os.path.isfile(CIF_PATH) and os.path.isfile(CHARGE_LOG_PATH):
-        loaded_data = read_charge_log_file(CHARGE_LOG_PATH)
-    elif os.path.isfile(CIF_PATH) and os.path.isfile(XYZ_PATH):
+    if os.path.isfile(CIF_PATH) and os.path.isfile(XYZ_PATH):
         loaded_data = read_xyz_file(XYZ_PATH)
     else:
         print ('Invalid input files!')
@@ -19,17 +17,7 @@ if __name__ == '__main__':
         with open(genecp_file, '+r') as f:
             genecp.append(f.read())
 
-
-    xtal = Crystal(cell_params, sym_ops)
-    main_molecule = Molecule(crystal = xtal,
-                            sym_id = ['x+0', 'y+0', 'z+0'],
-                            add_to_crystal = True)
-    for atomic_line in loaded_data:
-        Atom(molecule = main_molecule,
-            name = atomic_line[0],
-            orts = [float(coord) for coord in atomic_line[1:4]],
-            charge = float(atomic_line[4]),
-            add_to_unique_atom_set = True)
+    xtal, main_molecule = spawn_crystal(cell_params=cell_params, sym_ops=sym_ops, loaded_data=loaded_data)
 
     if EXTEND_HYDROGENS:
         main_molecule.extend_hydrogen_bonds()
@@ -42,11 +30,6 @@ if __name__ == '__main__':
         save_xyz(os.path.join(OUTPUT_DIRECTORY, f'counterpoise_dimer.xyz'), xtal)
         multiple_inputs(input_creation_function=create_counterpoise_input, outputdir=OUTPUT_DIRECTORY, name=NAME, crystal = xtal, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
 
-    if CREATE_ONIOM:
-        xtal.build_infinite_crystal(main_molecule)
-        xtal.cut_out_cluster(main_molecule=main_molecule, radius = RADIUS)
-        save_xyz(os.path.join(OUTPUT_DIRECTORY, f'cluster.xyz'), xtal)
-        multiple_inputs(input_creation_function = create_QMMM_input, outputdir=OUTPUT_DIRECTORY, name=NAME, crystal=xtal, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
     if CREATE_CHARGE_CALC:
         multiple_inputs(input_creation_function=create_charge_calc_input, outputdir=OUTPUT_DIRECTORY, name=NAME, molecule = main_molecule, functional = FUNCTIONAL, base = BASE, state = STATE, additional = ADDITIONAL, genecp = genecp)
 
@@ -55,3 +38,13 @@ if __name__ == '__main__':
 
     if CREATE_TDDFT_CALC:
         multiple_inputs(input_creation_function=create_tddft_input, outputdir=OUTPUT_DIRECTORY, name=NAME, molecule=main_molecule, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
+
+    if CREATE_ONIOM:
+            for i, charge_file in enumerate (CHARGE_LOG_PATH):
+                loaded_data = read_charge_log_file(charge_file)
+                functional, base, name = [FUNCTIONAL[i]], [BASE[i]], [NAME[i]]
+                xtal, main_molecule = spawn_crystal(cell_params=cell_params, sym_ops=sym_ops, loaded_data=loaded_data)
+                xtal.build_infinite_crystal(main_molecule)
+                xtal.cut_out_cluster(main_molecule=main_molecule, radius = RADIUS)
+                if i == 1: save_xyz(os.path.join(OUTPUT_DIRECTORY, f'cluster.xyz'), xtal)
+                multiple_inputs(input_creation_function = create_QMMM_input, outputdir=OUTPUT_DIRECTORY, name=name, crystal=xtal, functional = functional, base = base, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)

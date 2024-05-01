@@ -117,7 +117,7 @@ def create_iso_opt_input(outputdir, name, molecule, state, base, functional, nst
 
 def create_tddft_input(outputdir, name, molecule, state, base, functional, nstates = None, crystal = None, MM_theory = None, additional = '', genecp = ''):
     tddft_file = os.path.join(outputdir, f'{name}_{state}_tddft.inp')
-    headline_1 = f'#N {functional}/{base} TD=(nstates={nstates}, 50-50) pop=(full,Hirshfeld) Int=UltraFine {additional}\n'
+    headline_1 = f'#N {functional}/{base} TD=(nstates={nstates}) pop=(full,Hirshfeld) Int=UltraFine {additional}\n'
     if state[0] == 's' or state[0] == 'S':
         headline_2 = '0 1\n'
     elif state[0] == 't' or state[0] == 'T':
