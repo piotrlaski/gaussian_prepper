@@ -2,7 +2,6 @@ from config import *
 from lib.utils import *
 from lib.file_operations import *
 
-
 if __name__ == '__main__':
 
     if os.path.isfile(CIF_PATH) and os.path.isfile(CHARGE_LOG_PATH):
@@ -41,20 +40,19 @@ if __name__ == '__main__':
         xtal.spawn_sym_mate(main_molecule, COUNTERPOISE_SYMMETRY[0])
         xtal.spawn_sym_mate(main_molecule, COUNTERPOISE_SYMMETRY[1])
         save_xyz(f'counterpoise_dimer.xyz', xtal)
-        create_counterpoise_input(f'{NAME}_counterpoise.inp', xtal, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
+        create_counterpoise_input(os.path.join(OUTPUT_DIRECTORY, f'{NAME}_counterpoise.inp'), xtal, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
 
     if CREATE_ONIOM:
         xtal.build_infinite_crystal(main_molecule)
         xtal.cut_out_cluster(main_molecule=main_molecule, radius = RADIUS)
-        save_xyz(f'{NAME}_{STATE}_cluster.xyz', xtal)
-        create_QMMM_input(f'{NAME}_{STATE}_qmmm.inp',xtal, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
+        save_xyz(os.path.join(OUTPUT_DIRECTORY, f'{NAME}_{STATE}_cluster.xyz'), xtal)
+        create_QMMM_input(os.path.join(OUTPUT_DIRECTORY, f'{NAME}_{STATE}_qmmm.inp'),xtal, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
 
     if CREATE_CHARGE_CALC:
-        create_charge_calc_input(f'{NAME}_{STATE}_chrg.inp', main_molecule, functional = FUNCTIONAL, base = BASE, state = STATE, additional = ADDITIONAL, genecp = genecp)
+        create_charge_calc_input(os.path.join(OUTPUT_DIRECTORY, f'{NAME}_{STATE}_chrg.inp'), main_molecule, functional = FUNCTIONAL, base = BASE, state = STATE, additional = ADDITIONAL, genecp = genecp)
 
     if CREATE_ISOLATED_OPT:
-        create_iso_opt_input(f'{NAME}_{STATE}_isolated.inp', main_molecule, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
+        create_iso_opt_input(os.path.join(OUTPUT_DIRECTORY, f'{NAME}_{STATE}_isolated.inp'), main_molecule, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
 
     if CREATE_TDDFT_CALC:
-        create_tddft_input(f'{NAME}_{STATE}_tddft.inp', main_molecule, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
-
+        create_tddft_input(os.path.join(OUTPUT_DIRECTORY, f'{NAME}_{STATE}_tddft.inp'), main_molecule, functional = FUNCTIONAL, base = BASE, state = STATE, nstates = NSTATES, additional = ADDITIONAL, genecp = genecp)
