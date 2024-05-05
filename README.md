@@ -13,5 +13,7 @@ Currently you can create inputs for:
 
 You also have an option to standarize H-X bonds (C-H, O-H, N-H) for your uploaded geometry, as well an option to specify your own basis set and/or ECP pseudopotential.
 
+In order to create multiple inputs, use the "multiple" branch. The jobs will be then created for every specified electronic state (S0, S1, T1 etc.), using the first functional/base/name from the list, then the second and so on. The pseudopotential GenECP files will be accessed in order, whenever a GenECP base is specified. 
+
 For any additional help or bug reports, please contact:
 pa.laski@uw.edu.pl
